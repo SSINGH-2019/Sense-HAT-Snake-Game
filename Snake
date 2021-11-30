@@ -1,0 +1,184 @@
+# Snake 
+
+# Shobhit Singh, 2018
+
+from sense_hat import SenseHat, ACTION_PRESSED
+from random import randint
+from time import sleep
+
+
+sense = SenseHat()
+
+
+DIRECTION = (0, 0)
+SNAKE = [[randint(0, 63),DIRECTION]]
+APPLE = 0
+APPLE_EATEN = True
+
+
+S = (0, 255, 0)
+A = (255, 0, 0)
+O = (0, 0, 0)
+
+disp = [
+O, O, O, O, O, O, O, O,
+O, O, O, O, O, O, O, O,
+O, O, O, O, O, O, O, O,
+O, O, O, O, O, O, O, O,
+O, O, O, O, O, O, O, O,
+O, O, O, O, O, O, O, O,
+O, O, O, O, O, O, O, O,
+O, O, O, O, O, O, O, O]
+
+
+def replace (list, index, element):
+    list.pop(index)
+    list.insert(index, element)
+
+
+def find(x, act):
+   
+    if act == (0, 1):
+        if x != 0 and x != 1 and x != 2 and x != 3 and x != 4 and x != 5 and x != 6 and x != 7:
+            x -= 8
+    elif act == (0, -1):
+        if x != 56 and x != 57 and x != 58 and x != 59 and x != 60 and x != 61 and x != 62 and x != 63:
+            x += 8
+    elif act == (1, 0):
+        if x != 7 and x != 15 and x != 23 and x != 31 and x != 39 and x != 47 and x != 55 and x != 63:
+            x += 1
+    elif act == (-1, 0):
+        if x != 0 and x != 8 and x != 16 and x != 24 and x != 32 and x != 40 and x != 48 and x != 56:
+            x -= 1
+        
+    return x
+    
+    
+def TRANSITION():
+    for i in range(0, 255, 2):
+        sense.clear(0, i, 0)
+        
+    for i in range(254, -1, -2):
+        sense.clear(0, i, 0)
+
+
+def opp(tuple):
+    x = tuple[0]
+    y = tuple[1]
+
+    x = x * (-1)
+    y = y * (-1)
+    
+    return (x, y)
+
+
+def draw():
+    global disp, SNAKE, APPLE, APPLE_EATEN
+
+    disp = [
+    O, O, O, O, O, O, O, O,
+    O, O, O, O, O, O, O, O,
+    O, O, O, O, O, O, O, O,
+    O, O, O, O, O, O, O, O,
+    O, O, O, O, O, O, O, O,
+    O, O, O, O, O, O, O, O,
+    O, O, O, O, O, O, O, O,
+    O, O, O, O, O, O, O, O
+    ]
+    
+    # Draw snake
+    for i in range(len(SNAKE)):
+        replace(disp, SNAKE[i][0], S)
+
+    # Draw apple
+    if APPLE_EATEN:
+        APPLE = randint(0, 63)
+        if disp[APPLE] == S:
+            while disp[APPLE] == S:
+                APPLE = randint(0, 63)
+        APPLE_EATEN = False
+
+    disp[APPLE] = A
+    sense.set_pixels(disp)
+
+           
+def update():
+    global SNAKE, APPLE_EATEN
+
+    for i in range(len(SNAKE)-1,-1,-1):
+        SNAKE[i][1] = SNAKE[i-1][1]
+    
+    SNAKE[0][1] = DIRECTION
+
+    for i in range(len(SNAKE)-1,-1,-1):
+        SNAKE[i][0] = find(SNAKE[i][0], SNAKE[i][1])
+
+    if disp[find(SNAKE[0][0], DIRECTION)] == S and DIRECTION != (0, 0):
+        GAME_OVER()
+    
+    if disp[SNAKE[0][0]] == A:
+        APPLE_EATEN = True
+        SNAKE.insert(len(SNAKE)-1, [SNAKE[len(SNAKE)-1][0], (0, 0)])
+
+    draw()
+
+
+def GAME_OVER():
+    global a
+    a = False
+
+    
+def _UP(event):
+    global DIRECTION
+    if event.action == ACTION_PRESSED:
+        if len(SNAKE) != 1 and DIRECTION != (0, -1):
+            DIRECTION = (0, 1)
+        else: 
+            DIRECTION = (0, 1)
+
+def _DOWN(event):
+    global DIRECTION
+    if event.action == ACTION_PRESSED:
+        if len(SNAKE) != 1 and DIRECTION != (0, 1):
+            DIRECTION = (0, -1)
+        else: 
+            DIRECTION = (0, -1)
+            
+def _RIGHT(event):
+    global DIRECTION
+    if event.action == ACTION_PRESSED:
+        if len(SNAKE) != 1 and DIRECTION != (-1, 0):
+            DIRECTION = (1, 0)
+        else: 
+            DIRECTION = (1, 0)
+            
+def _LEFT(event):
+    global DIRECTION
+    if event.action == ACTION_PRESSED:
+        if len(SNAKE) != 1 and DIRECTION != (1, 0):
+            DIRECTION = (-1, 0)
+        else: 
+            DIRECTION = (-1, 0)
+    
+sense.stick.direction_up = _UP
+sense.stick.direction_down = _DOWN
+sense.stick.direction_left = _LEFT
+sense.stick.direction_right = _RIGHT
+
+sense.clear()
+
+a = True
+while a: 
+    sleep(0.3)
+    update()
+
+print("Your score:", len(SNAKE)-1, "apples.")
+TRANSITION()
+
+message = "GAME OVER Your score: " + str(len(SNAKE)-1) + " apples"
+
+sense.show_message(message, 0.12, (0, 255, 0), (0, 0, 0))
+
+sense.clear()
+    
+    
